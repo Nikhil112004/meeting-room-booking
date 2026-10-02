@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id Int @id @default(autoincrement())
+  name String
+  bookings Booking[]
+    createdAt DateTime @default(now())
+}
+
+model Booking {
+  id Int @id @default(autoincrement())
+  roomId Int
+  title String
+  date DateTime
+  startTime String
+  endTime String
+  createdAt DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, date])
+}
