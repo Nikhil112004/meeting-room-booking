@@ -11,17 +11,19 @@ The assignment suggested FastAPI and Pydantic. I used the Node.js stack already 
 
 ## How I approached it
 
-I spent most of my project time on the backend rules and validation. A booking must have a valid date and time, stay within 9:00 AM to 6:00 PM, and start in the future. The frontend checks the form before sending it, and the backend repeats the important checks so that invalid requests cannot bypass the UI.
+spent most of my time on the backend rules and validation. A booking must have a valid date and time, stay within the 9:00 AM to 6:00 PM working hours, and start in the future. The frontend validates the form before sending the request, while the backend repeats the important checks so invalid requests cannot bypass the UI.
 
-For conflicts, I treat a booking as the half-open interval `[start, end)`. The database query catches partial overlaps, bookings inside another booking, and identical ranges. It allows back-to-back meetings because an end time can equal the next start time. 
+For booking conflicts, I treat each booking as a half-open interval [start, end). This handles partial overlaps, bookings completely inside another booking, and identical time ranges. It also allows back-to-back meetings, where one booking ends exactly when another starts.
 
-The create operation runs in a transaction and takes a PostgreSQL advisory lock for that room and date before checking and inserting. This serializes competing requests for the same room and date, so they cannot both pass the conflict check at once. A shared error handler returns clear client messages, maps database connection failures to a service-unavailable response, and avoids sending raw server errors to the browser.
+The booking creation process runs inside a database transaction and uses a PostgreSQL advisory lock for the specific room and date. This ensures that simultaneous requests for the same room and date are handled one at a time, preventing both requests from passing the conflict check.
 
-The next-available lookup sorts a room's bookings and walks through the gaps from opening time to closing time. It returns the first gap that fits the requested duration, including an exact fit, or `null` if there is no slot. For today's date it starts at the current minute (rounded forward when needed), so it does not suggest a slot that has already passed.
+I also added centralized error handling to return clear messages to the client and prevent raw server errors from being exposed.
 
-For the interface, I looked at room-booking and workspace dashboard examples on Pinterest for layout ideas, then made a responsive dashboard with room cards, date and room filters, booking actions, and feedback for loading, empty, and error states.
+For the next available slot, the system sorts the room's bookings and checks the gaps between them from opening time to closing time. It returns the first gap that can fit the requested duration, including exact fits, or null when no suitable slot is available. For today's date, it starts checking from the current time so it does not suggest a slot that has already passed.
 
-I also used AI coding assistance during implementation and cleanup, especially on the frontend, and reviewed and adjusted the resulting code. The assignment asked candidates not to use AI, so I want to be clear about that. I am prepared to explain the booking rules and the choices in this code.
+For the frontend, I looked at room-booking and workspace dashboard designs on Pinterest for layout inspiration. I then built a responsive dashboard with room cards, date and room filters, booking actions, and loading, empty, and error states.
+
+I also used AI coding assistance during implementation and cleanup, mainly for the frontend, and reviewed and adjusted the generated code. The assignment requested candidates not to use AI, so I want to be transparent about this. I am comfortable explaining the booking logic, validation, and technical decisions made in the project.
 
 ## Run it locally
 
