@@ -11,8 +11,10 @@ const createBooking = async ({ roomId, title, date, startTime, endTime }) => {
 
   const parsedDate = toUtcDate(date);
   return prisma.$transaction(async (tx) => {
+    // Lock this room/day so concurrent requests cannot both pass the overlap check.
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`${roomId}:${date}`}))::text`;
 
+    // Treat intervals as [start, end): a meeting may start exactly when another ends.
     const conflictingBooking = await tx.booking.findFirst({
       where: {
         roomId: Number(roomId), date: parsedDate,
@@ -21,7 +23,9 @@ const createBooking = async ({ roomId, title, date, startTime, endTime }) => {
     });
 
     if (conflictingBooking) {
-      const error = new Error(`Room is already booked from ${conflictingBooking.startTime} to ${conflictingBooking.endTime}`);
+      const error = new Error(
+        `Booking "${conflictingBooking.title}" (#${conflictingBooking.id}) already uses this room from ${conflictingBooking.startTime} to ${conflictingBooking.endTime}`,
+      );
       error.statusCode = 409;
       error.conflict = conflictingBooking;
       throw error;
@@ -111,6 +115,7 @@ const getNextAvailableSlot = async (roomId, date, duration) => {
 
   let currentTime = WORK_START;
 
+  // Sorted bookings let us advance one cursor through gaps from opening time to closing time.
   for (const booking of bookingSlots) {
     const gap = booking.start - currentTime;
 

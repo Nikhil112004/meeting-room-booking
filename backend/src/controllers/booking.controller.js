@@ -4,9 +4,9 @@ const { isValidDate, isInteger, isPositiveInteger, isValidTime } = require("../u
 
 const createBooking = async (req, res, next) => {
   try {
-    const { roomId, title, date, startTime, endTime } = req.body;
+    const { roomId, title, date, startTime, endTime } = req.body || {};
 
-    if (!roomId || !title || !date || !startTime || !endTime) {
+    if (!roomId || !date || !startTime || !endTime) {
       return res.status(400).json({
         success: false,
         message: "All booking fields are required",
@@ -16,6 +16,12 @@ const createBooking = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: "Valid roomId is required",
+      });
+    }
+    if (typeof title !== "string") {
+      return res.status(400).json({
+        success: false,
+        message: "Booking title must be a string",
       });
     }
     if (!title.trim()) {
@@ -171,6 +177,12 @@ const getNextAvailable = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: "Duration must be a positive integer",
+      });
+    }
+    if (Number(duration) > 540) {
+      return res.status(400).json({
+        success: false,
+        message: "Duration cannot exceed working hours (540 minutes)",
       });
     }
 

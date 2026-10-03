@@ -21,7 +21,13 @@ const isValidDate = (date) => {
     );
 };
 
-const isInteger = (value) => Number.isInteger(Number(value));
+const isInteger = (value) => {
+    if (typeof value !== "number" && typeof value !== "string") return false;
+    if (typeof value === "string" && value.trim() === "") return false;
+
+    const number = Number(value);
+    return Number.isSafeInteger(number) && number > 0;
+};
 
 const isPositiveInteger = (value) => isInteger(value) && Number(value) > 0;
 

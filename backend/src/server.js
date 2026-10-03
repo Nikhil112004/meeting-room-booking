@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const roomRouter = require("./routes/room.routes");
 const bookingRouter = require("./routes/booking.routes");
+const docsRouter = require("./routes/docs.routes");
 const errorHandler = require("./middleware/error.middleware");
 const app = express();
 
@@ -20,6 +21,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/rooms", roomRouter);
 app.use("/api/bookings", bookingRouter);
+app.use(docsRouter);
 
 app.use((req, res) => {
     return res.status(404).json({

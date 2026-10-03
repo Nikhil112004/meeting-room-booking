@@ -26,4 +26,5 @@ model Booking {
   room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([roomId, date])
+  @@index([date, roomId])
 }
