@@ -13,7 +13,7 @@ The assignment suggested FastAPI and Pydantic. I used the Node.js stack already 
 
 I spent most of my time on the backend rules and validation. A booking must have a valid date and time, stay within the 9:00 AM to 6:00 PM working hours, and start in the future. The frontend validates the form before sending the request, while the backend repeats the important checks so invalid requests cannot bypass the UI.
 
-For booking conflicts, I treat each booking as a half-open interval [start, end). This handles partial overlaps, bookings completely inside another booking, and identical time ranges. It also allows back-to-back meetings, where one booking ends exactly when another starts.
+For booking conflicts, I treat each booking as a half-open interval [start, end]. This handles partial overlaps, bookings completely inside another booking, and identical time ranges. It also allows back-to-back meetings, where one booking ends exactly when another starts.
 
 The booking creation process runs inside a database transaction and uses a PostgreSQL advisory lock for the specific room and date. This ensures that simultaneous requests for the same room and date are handled one at a time, preventing both requests from passing the conflict check.
 
