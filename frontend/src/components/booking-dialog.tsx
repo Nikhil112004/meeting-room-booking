@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CalendarDays, Clock3, DoorOpen, X } from "lucide-react";
 import { useState } from "react";
 import type { BookingInput, Room } from "@/types/booking";
+import { isBookingDateTimePast } from "@/lib/date";
 
 function BookingForm({
   rooms,
@@ -29,18 +30,20 @@ function BookingForm({
   const [startTime, setStartTime] = useState(initialStartTime ?? "09:00");
   const [endTime, setEndTime] = useState(initialEndTime ?? "10:00");
   const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (
-      !roomId ||
-      !title.trim() ||
-      !date ||
-      startTime >= endTime ||
-      startTime < "09:00" ||
-      endTime > "18:00"
-    )
+    if (!roomId || !title.trim() || !date) return;
+    if (startTime >= endTime || startTime < "09:00" || endTime > "18:00") {
+      setFormError("Choose a valid time between 9:00 AM and 6:00 PM.");
       return;
+    }
+    if (isBookingDateTimePast(date, startTime)) {
+      setFormError("Choose a future date and a start time that has not passed.");
+      return;
+    }
+    setFormError("");
     setSaving(true);
     try {
       const saved = await onSubmit({
@@ -102,7 +105,10 @@ function BookingForm({
             min="09:00"
             max="17:59"
             value={startTime}
-            onChange={(event) => setStartTime(event.target.value)}
+            onChange={(event) => {
+              setStartTime(event.target.value);
+              setFormError("");
+            }}
           />
         </label>
         <span className="time-arrow">
@@ -116,13 +122,17 @@ function BookingForm({
             min="09:01"
             max="18:00"
             value={endTime}
-            onChange={(event) => setEndTime(event.target.value)}
+            onChange={(event) => {
+              setEndTime(event.target.value);
+              setFormError("");
+            }}
           />
         </label>
       </div>
       <p className="form-hint">
         <Clock3 size={14} /> Bookings are available between 9:00 AM and 6:00 PM.
       </p>
+      {formError && <p className="form-error" role="alert">{formError}</p>}
       <div className="dialog-actions">
         <button type="button" className="button button-quiet" onClick={onClose}>
           Cancel

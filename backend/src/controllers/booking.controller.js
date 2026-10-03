@@ -1,5 +1,12 @@
 const bookingService = require("../services/booking.service");
-const { isValidDate, isInteger, isPositiveInteger, isValidTime } = require("../utils/validation");
+const {
+  isValidDate,
+  isInteger,
+  isPositiveInteger,
+  isValidTime,
+  isPastDate,
+  isPastDateTime,
+} = require("../utils/validation");
 
 
 const createBooking = async (req, res, next) => {
@@ -59,6 +66,13 @@ const createBooking = async (req, res, next) => {
       });
     }
 
+    if (isPastDateTime(date, startTime)) {
+      return res.status(400).json({
+        success: false,
+        message: "Bookings must be for a future date and time.",
+      });
+    }
+
     const booking = await bookingService.createBooking({ roomId, title, date, startTime, endTime });
     return res.status(201).json({
       success: true,
@@ -66,7 +80,7 @@ const createBooking = async (req, res, next) => {
       data: booking,
     });
   } catch (error) {
-    if (error.statusCode === 409 || error.statusCode === 404) {
+    if (error.statusCode === 400 || error.statusCode === 409 || error.statusCode === 404) {
       return res.status(error.statusCode).json({
         success: false,
         message: error.message,
@@ -163,6 +177,13 @@ const getNextAvailable = async (req, res, next) => {
       return res.status(400).json({
         success: false,
         message: "Invalid date. Use YYYY-MM-DD format",
+      });
+    }
+
+    if (isPastDate(date)) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot search for an available slot on a past date.",
       });
     }
 

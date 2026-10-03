@@ -8,7 +8,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useRef, useState } from "react";
-import { formatShortDate, getLocalDateString } from "@/lib/date";
+import { formatShortDate, getIndiaDateTime } from "@/lib/date";
 import { useDismiss } from "@/hooks/useDismiss";
 
 const keyFor = (date: Date) => {
@@ -34,7 +34,7 @@ export function DatePicker({
     firstOfMonth(value ? fromKey(value) : new Date()),
   );
   const rootRef = useRef<HTMLDivElement>(null);
-  const todayKey = getLocalDateString();
+  const todayKey = getIndiaDateTime().date;
   const selectedDate = value ? fromKey(value) : null;
   const monthLabel = new Intl.DateTimeFormat("en", {
     month: "long",

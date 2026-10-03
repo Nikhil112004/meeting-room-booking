@@ -35,10 +35,40 @@ const isValidTime = (time) => typeof time === "string" && /^([01]\d|2[0-3]):([0-
 
 const toUtcDate = (date) => new Date(`${date}T00:00:00.000Z`);
 
+const getIndiaDateTime = (now = new Date()) => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23",
+    }).formatToParts(now);
+    const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+
+    return {
+        date: `${values.year}-${values.month}-${values.day}`,
+        time: `${values.hour}:${values.minute}`,
+        second: Number(values.second),
+    };
+};
+
+const isPastDate = (date) => date < getIndiaDateTime().date;
+
+const isPastDateTime = (date, time) => {
+    const now = getIndiaDateTime();
+    return date < now.date || (date === now.date && time <= now.time);
+};
+
 module.exports = {
     isValidDate,
     isInteger,
     isPositiveInteger,
     isValidTime,
     toUtcDate,
+    getIndiaDateTime,
+    isPastDate,
+    isPastDateTime,
 };

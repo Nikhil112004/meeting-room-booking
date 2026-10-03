@@ -3,6 +3,32 @@ export function getLocalDateString(date = new Date()) {
   return new Date(localTime).toISOString().slice(0, 10);
 }
 
+export function getIndiaDateTime(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const value = (type: string) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  return {
+    date: `${value("year")}-${value("month")}-${value("day")}`,
+    time: `${value("hour")}:${value("minute")}`,
+    second: Number(value("second")),
+  };
+}
+
+export function isBookingDateTimePast(date: string, time: string) {
+  const now = getIndiaDateTime();
+  return date < now.date || (date === now.date && time <= now.time);
+}
+
 function parseDate(value: string) {
   return new Date(`${value}T00:00:00Z`);
 }

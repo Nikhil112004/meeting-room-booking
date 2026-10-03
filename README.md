@@ -61,7 +61,9 @@ Open `http://localhost:3000`.
 
 Bookings use half-open time ranges: `[start, end)`. The overlap query therefore rejects partial, contained, and identical overlaps while allowing a booking to start exactly when another ends. A PostgreSQL transaction lock serializes creates for the same room and date, so two simultaneous requests cannot both pass the conflict check.
 
-For next-slot lookup, bookings are read in start-time order. A cursor moves from 09:00 across each booking and checks each gap, then checks the remaining time through 18:00. The first gap large enough for the requested duration is returned; no fit returns `null`.
+Past dates and start times that have already passed in India time are rejected with HTTP 400 and a clear message. The form performs the same check before sending a request. Next-slot lookup rejects past dates and, for today, starts searching from the next available minute so it never suggests a slot that has already passed.
+
+For next-slot lookup, bookings are read in start-time order. A cursor moves from 09:00 across each booking and checks each gap, then checks the remaining time through 18:00. For today, the cursor starts at the current time (rounded up to the next minute when needed). The first gap large enough for the requested duration is returned; no fit returns `null`.
 
 ## Deployment
 
@@ -73,4 +75,4 @@ Live URLs are not included yet; deployment and live-link checks are still pendin
 
 ## Current verification
 
-Frontend TypeScript and backend JavaScript syntax checks have been run. Database-backed integration checks and deployed-link checks remain to be done.
+Backend JavaScript syntax checks pass. The frontend TypeScript check was attempted but ran out of available Node.js memory before it could finish. Database-backed integration checks and deployed-link checks remain to be done.

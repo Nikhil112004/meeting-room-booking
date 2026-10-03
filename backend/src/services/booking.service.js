@@ -1,5 +1,5 @@
 const prisma = require("../lib/prisma");
-const { toUtcDate } = require("../utils/validation");
+const { toUtcDate, getIndiaDateTime, isPastDateTime } = require("../utils/validation");
 
 const createBooking = async ({ roomId, title, date, startTime, endTime }) => {
   const room = await prisma.room.findUnique({ where: { id: Number(roomId) } });
@@ -11,10 +11,16 @@ const createBooking = async ({ roomId, title, date, startTime, endTime }) => {
 
   const parsedDate = toUtcDate(date);
   return prisma.$transaction(async (tx) => {
-    // Lock this room/day so concurrent requests cannot both pass the overlap check.
+    // Serialize creates for this room and date so concurrent requests cannot both pass the overlap check.
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`${roomId}:${date}`}))::text`;
 
-    // Treat intervals as [start, end): a meeting may start exactly when another ends.
+    if (isPastDateTime(date, startTime)) {
+      const error = new Error("Bookings must be for a future date and time.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Half-open ranges allow a new meeting to begin exactly when another one ends.
     const conflictingBooking = await tx.booking.findFirst({
       where: {
         roomId: Number(roomId), date: parsedDate,
@@ -101,19 +107,24 @@ const getNextAvailableSlot = async (roomId, date, duration) => {
   const WORK_START = 9 * 60;
   const WORK_END = 18 * 60;
   const requestedDuration = Number(duration);
+  const now = getIndiaDateTime();
+  const currentMinute = timeToMinutes(now.time) + (now.second > 0 ? 1 : 0);
+  const workStart = date === now.date ? Math.max(WORK_START, currentMinute) : WORK_START;
+
+  if (workStart >= WORK_END) return null;
 
   if (bookingSlots.length === 0) {
-    if (WORK_START + requestedDuration <= WORK_END) {
+    if (workStart + requestedDuration <= WORK_END) {
       return {
-        startTime: minutesToTime(WORK_START),
-        endTime: minutesToTime(WORK_START + requestedDuration),
+        startTime: minutesToTime(workStart),
+        endTime: minutesToTime(workStart + requestedDuration),
       };
     }
 
     return null;
   }
 
-  let currentTime = WORK_START;
+  let currentTime = workStart;
 
   // Sorted bookings let us advance one cursor through gaps from opening time to closing time.
   for (const booking of bookingSlots) {
